@@ -1,0 +1,102 @@
+package com.ontariotechu.sofe3980U;
+
+import java.io.FileReader;
+import java.util.List;
+import com.opencsv.*;
+
+public class App
+{
+	public static void main(String[] args)
+	{
+		String[] files = {"model_1.csv", "model_2.csv", "model_3.csv"};
+
+		for (String filePath : files) {
+
+			System.out.println("Results for " + filePath);
+
+			try {
+				FileReader filereader = new FileReader(filePath);
+				CSVReader csvReader = new CSVReaderBuilder(filereader).withSkipLines(1).build();
+				List<String[]> allData = csvReader.readAll();
+
+				double bce = 0;
+				int TP = 0, TN = 0, FP = 0, FN = 0;
+				int n = allData.size();
+
+				int pos = 0, neg = 0;
+
+				for (String[] row : allData) {
+					double actual = Double.parseDouble(row[0]);
+					double predicted = Double.parseDouble(row[1]);
+
+					// BCE
+					if (actual == 1)
+						bce += Math.log(predicted);
+					else
+						bce += Math.log(1 - predicted);
+
+					// Binary prediction
+					int predBinary = predicted >= 0.5 ? 1 : 0;
+
+					// Confusion matrix
+					if (actual == 1 && predBinary == 1) TP++;
+					else if (actual == 0 && predBinary == 0) TN++;
+					else if (actual == 0 && predBinary == 1) FP++;
+					else FN++;
+
+					if (actual == 1) pos++;
+					else neg++;
+				}
+
+				bce = -bce / n;
+
+				double accuracy = (double)(TP + TN) / n;
+				double precision = (double)TP / (TP + FP);
+				double recall = (double)TP / (TP + FN);
+				double f1 = 2 * precision * recall / (precision + recall);
+
+				double[] x = new double[101];
+				double[] y = new double[101];
+
+				for (int i = 0; i <= 100; i++) {
+					double th = i / 100.0;
+					int tp = 0, fp = 0;
+
+					for (String[] row : allData) {
+						double actual = Double.parseDouble(row[0]);
+						double predicted = Double.parseDouble(row[1]);
+
+						if (actual == 1 && predicted >= th) tp++;
+						if (actual == 0 && predicted >= th) fp++;
+					}
+
+					y[i] = (double) tp / pos;
+					x[i] = (double) fp / neg;
+				}
+
+				double auc = 0;
+				for (int i = 1; i <= 100; i++) {
+					auc += (y[i-1] + y[i]) * Math.abs(x[i] - x[i-1]) / 2;
+				}
+
+				System.out.println("BCE = " + bce);
+
+				System.out.println("Confusion matrix");
+				System.out.println("\t\t y=1\t y=0");
+				System.out.println("y^=1\t " + TP + "\t " + FP);
+				System.out.println("y^=0\t " + FN + "\t " + TN);
+
+				System.out.println("Accuracy = " + accuracy);
+				System.out.println("Precision = " + precision);
+				System.out.println("Recall = " + recall);
+				System.out.println("F1 score = " + f1);
+				System.out.println("AUC ROC = " + auc);
+
+				System.out.println();
+
+			} catch (Exception e) {
+				System.out.println("Error reading file: " + filePath);
+			}
+		}
+	}
+}
