@@ -1,0 +1,88 @@
+package com.ontariotechu.sofe3980U;
+
+import java.io.FileReader;
+import java.util.List;
+import com.opencsv.*;
+
+public class App
+{
+	public static void main( String[] args )
+	{
+		String filePath="model.csv";
+		FileReader filereader;
+		List<String[]> allData;
+		try{
+			filereader = new FileReader(filePath);
+			CSVReader csvReader = new CSVReaderBuilder(filereader).withSkipLines(1).build();
+			allData = csvReader.readAll();
+		}
+		catch(Exception e){
+			System.out.println( "Error reading the CSV file" );
+			return;
+		}
+
+		int count=0;
+		float[] y_predicted=new float[5];
+		for (String[] row : allData) {
+			int y_true=Integer.parseInt(row[0]);
+			System.out.print(y_true);
+			for(int i=0;i<5;i++){
+				y_predicted[i]=Float.parseFloat(row[i+1]);
+				System.out.print("  \t  "+y_predicted[i]);
+			}
+			System.out.println();
+			count++;
+			if (count==10){
+				break;
+			}
+		}
+
+
+		calculateCEAndConfusionMatrix(allData);  //Task 3: CE and Confusion Matrix code starts from here
+	}
+
+	//function
+	public static void calculateCEAndConfusionMatrix(List<String[]> allData) {
+		int numClasses = 5;
+		int[][] confusionMatrix = new int[numClasses][numClasses];
+		double ceSum = 0.0;
+
+		for (String[] row : allData) {
+			int trueLabel = Integer.parseInt(row[0]); // 1..5
+			double[] probs = new double[numClasses];
+			for (int i = 0; i < numClasses; i++) {
+				probs[i] = Double.parseDouble(row[i + 1]);
+			}
+
+			ceSum -= Math.log(probs[trueLabel - 1]);
+
+			int predictedLabel = 1;
+			double maxProb = probs[0];
+			for (int i = 1; i < numClasses; i++) {
+				if (probs[i] > maxProb) {
+					maxProb = probs[i];
+					predictedLabel = i + 1;
+				}
+			}
+
+			//update the confusion matrix
+			confusionMatrix[trueLabel - 1][predictedLabel - 1]++;
+		}
+
+		double CE = ceSum / allData.size();
+		System.out.println("CE = " + CE);
+
+		//code for printing the confusion matrix
+		System.out.println("Confusion matrix");
+		System.out.print("           ");
+		for (int c = 1; c <= numClasses; c++) System.out.print("y=" + c + "     ");
+		System.out.println();
+		for (int r = 0; r < numClasses; r++) {
+			System.out.print("y^=" + (r + 1) + "    ");
+			for (int c = 0; c < numClasses; c++) {
+				System.out.print(confusionMatrix[r][c] + "     ");
+			}
+			System.out.println();
+		}
+	}
+}
