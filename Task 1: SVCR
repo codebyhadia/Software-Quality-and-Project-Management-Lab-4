@@ -1,0 +1,53 @@
+package com.ontariotechu.sofe3980U;
+
+
+import java.io.FileReader; 
+import java.util.List;
+import com.opencsv.*;
+
+public class App {
+	public static void main(String[] args) {
+
+		String[] files = {"model_1.csv", "model_2.csv", "model_3.csv"};
+
+		for (String filePath : files) {
+
+			System.out.println("Results for " + filePath);
+
+			try {
+				FileReader filereader = new FileReader(filePath);
+				CSVReader csvReader = new CSVReaderBuilder(filereader).withSkipLines(1).build();
+				List<String[]> allData = csvReader.readAll();
+
+				double mse = 0;
+				double mae = 0;
+				double mare = 0;
+				double epsilon = 1e-10;
+				int n = 0;
+
+				for (String[] row : allData) {
+					double actual = Double.parseDouble(row[0]);
+					double predicted = Double.parseDouble(row[1]);
+
+					mse += Math.pow(actual - predicted, 2);
+					mae += Math.abs(actual - predicted);
+					mare += Math.abs(actual - predicted) / (Math.abs(actual) + epsilon);
+
+					n++;
+				}
+
+				mse /= n;
+				mae /= n;
+				mare = (mare / n);
+
+				System.out.println("MSE = " + mse);
+				System.out.println("MAE = " + mae);
+				System.out.println("MARE = " + mare);
+				System.out.println();
+
+			} catch (Exception e) {
+				System.out.println("Error reading file: " + filePath);
+			}
+		}
+	}
+}
